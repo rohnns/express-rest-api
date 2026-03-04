@@ -55,4 +55,22 @@ describe('Config', () => {
     expect(config.pagination.defaultLimit).toBe(20);
     expect(config.pagination.maxLimit).toBe(500);
   });
+
+  it('should have adapter default to null', () => {
+    expect(getConfig().adapter).toBeNull();
+  });
+
+  it('should store adapter factory function', () => {
+    const factory = (model) => ({ model });
+    configure({ adapter: factory });
+    expect(getConfig().adapter).toBe(factory);
+  });
+
+  it('should reset adapter to null', () => {
+    configure({ adapter: (model) => ({ model }) });
+    expect(getConfig().adapter).not.toBeNull();
+
+    resetConfig();
+    expect(getConfig().adapter).toBeNull();
+  });
 });

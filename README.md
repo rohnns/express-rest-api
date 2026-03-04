@@ -19,13 +19,16 @@ const {
   apiErrorHandler,
 } = require('@rkumwt/express-rest-api');
 
-const prisma = new PrismaClient();
+const db = new PrismaClient();
 const app = express();
 app.use(express.json());
 
-// Define a controller
+// Set adapter factory once — all controllers use it automatically
+configure({ adapter: createPrismaAdapter });
+
+// Define a controller — just specify the model
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
   defaultFields = ['id', 'name', 'email', 'role'];
   filterableFields = ['id', 'name', 'email', 'role', 'status'];
   hiddenFields = ['password'];
@@ -50,6 +53,43 @@ This generates:
 | PUT | `/api/v1/users/:id` | Update |
 | PATCH | `/api/v1/users/:id` | Partial update |
 | DELETE | `/api/v1/users/:id` | Delete |
+
+## Default Adapter
+
+Set the adapter factory once in config — no need to repeat it in every controller:
+
+```js
+const { configure, createPrismaAdapter } = require('@rkumwt/express-rest-api');
+
+// One-line config — all controllers auto-create adapters from this factory
+configure({ adapter: createPrismaAdapter });
+```
+
+```js
+// Controllers just specify the model
+class UserController extends ApiController {
+  model = db.user;
+}
+
+class PostController extends ApiController {
+  model = db.post;
+}
+```
+
+Switching ORMs? Change one line in config:
+
+```js
+// Switch from Prisma to Sequelize — controllers stay the same
+configure({ adapter: createSequelizeAdapter });
+```
+
+You can also set the adapter explicitly on a per-controller basis (overrides the config factory):
+
+```js
+class UserController extends ApiController {
+  adapter = createPrismaAdapter(db.user); // Explicit — overrides config
+}
+```
 
 ## Query Parameters
 
@@ -146,9 +186,9 @@ GET /api/v1/users?limit=10&offset=20
 
 ```js
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
 
-  // Field selection defaults
+  // Fields returned by default (null = all fields)
   defaultFields = ['id', 'name', 'email', 'role'];
 
   // Allowed filter fields (null = all allowed)
@@ -160,7 +200,7 @@ class UserController extends ApiController {
   // Allowed sort fields (null = all allowed)
   sortableFields = ['id', 'name', 'email', 'createdAt'];
 
-  // Pagination
+  // Pagination overrides
   defaultLimit = 20;
   maxLimit = 200;
 
@@ -174,7 +214,7 @@ class UserController extends ApiController {
 
 ```js
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
 
   // Called before creating a resource
   async beforeStore(data, req) {
@@ -214,7 +254,7 @@ Modify the database query before execution:
 
 ```js
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
 
   // Add filter to every index query
   modifyIndex(queryOptions, req) {
@@ -225,7 +265,7 @@ class UserController extends ApiController {
     return queryOptions;
   }
 
-  // Scope show to current user
+  // Modify show query
   modifyShow(queryOptions, req) {
     return queryOptions;
   }
@@ -242,7 +282,7 @@ Supports Zod, Joi, or custom functions. Auto-detected at runtime.
 const { z } = require('zod');
 
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
 
   storeSchema = z.object({
     name: z.string().min(1).max(255),
@@ -261,7 +301,7 @@ class UserController extends ApiController {
 
 ```js
 class UserController extends ApiController {
-  adapter = createPrismaAdapter(prisma.user);
+  model = db.user;
 
   storeSchema = async (data) => {
     const errors = {};
@@ -318,9 +358,11 @@ app.use(api.getRouter());
 ## Global Configuration
 
 ```js
-const { configure } = require('@rkumwt/express-rest-api');
+const { configure, createPrismaAdapter } = require('@rkumwt/express-rest-api');
 
 configure({
+  // Set adapter factory once for all controllers
+  adapter: createPrismaAdapter,
   pagination: {
     defaultLimit: 20,    // default: 10
     maxLimit: 500,       // default: 1000

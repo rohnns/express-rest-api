@@ -1,6 +1,7 @@
 'use strict';
 
 const defaultConfig = {
+  adapter: null,
   pagination: {
     defaultLimit: 10,
     maxLimit: 1000,
@@ -31,6 +32,7 @@ function getConfig() {
 
 function resetConfig() {
   config = JSON.parse(JSON.stringify(defaultConfig));
+  config.adapter = null;
 }
 
 function deepMerge(target, source) {

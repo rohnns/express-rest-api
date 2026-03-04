@@ -6,8 +6,26 @@ const ApiResponse = require('./ApiResponse');
 const NotFoundException = require('./exceptions/NotFoundException');
 
 class ApiController {
-  // Subclass should set:
-  // adapter = createPrismaAdapter(prisma.user)
+  // Subclass should set one of:
+  // adapter = createPrismaAdapter(prisma.user)  — explicit adapter
+  // model = prisma.user                         — uses adapter factory from config
+
+  model = null;
+  _adapter = null;
+
+  get adapter() {
+    if (!this._adapter && this.model) {
+      const config = getConfig();
+      if (typeof config.adapter === 'function') {
+        this._adapter = config.adapter(this.model);
+      }
+    }
+    return this._adapter;
+  }
+
+  set adapter(value) {
+    this._adapter = value;
+  }
 
   // Optional configuration (override in subclass)
   defaultFields = null;
