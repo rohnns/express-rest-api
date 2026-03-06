@@ -1,135 +1,211 @@
-# @rkumwt/express-rest-api
+# Express Rest API
 
-REST API package for Express.js. Get full CRUD with filtering, sorting, pagination, and hooks in minutes.
+REST API package for Express.js. Get full CRUD with filtering, sorting, pagination, validation, and hooks — in minutes.
 
-## Quick Start
+[![npm version](https://img.shields.io/npm/v/@rkumwt/express-rest-api)](https://www.npmjs.com/package/@rkumwt/express-rest-api)
+[![license](https://img.shields.io/npm/l/@rkumwt/express-rest-api)](https://github.com/rkumwt/rest-api/blob/master/LICENSE)
+
+**Documentation:** [https://express-rest-api.rajesh-kumawat.in](https://express-rest-api.rajesh-kumawat.in)
+
+## Features
+
+- **Zero boilerplate CRUD** — Define a controller, get 6 REST endpoints
+- **Filtering, sorting, pagination** — Built-in query parameter parsing
+- **Default adapter** — Configure once, use in every controller
+- **Multi-ORM support** — Prisma, Sequelize, Mongoose, Knex, Drizzle
+- **Lifecycle hooks** — beforeStore, afterStore, beforeUpdate, etc.
+- **Validation** — Zod, Joi, or custom functions (auto-detected)
+- **Hidden fields** — Automatically strip sensitive data from responses
+
+## Installation
 
 ```bash
 npm install @rkumwt/express-rest-api
 ```
 
-```js
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const {
-  ApiController,
-  createApiRouter,
-  createPrismaAdapter,
-  configure,
-  apiErrorHandler,
-} = require('@rkumwt/express-rest-api');
+Install your ORM of choice:
 
-const db = new PrismaClient();
-const app = express();
-app.use(express.json());
-
-// Set adapter factory once — all controllers use it automatically
-configure({ adapter: createPrismaAdapter });
-
-// Define a controller — just specify the model
-class UserController extends ApiController {
-  model = db.user;
-  defaultFields = ['id', 'name', 'email', 'role'];
-  filterableFields = ['id', 'name', 'email', 'role', 'status'];
-  hiddenFields = ['password'];
-}
-
-// Register routes
-const api = createApiRouter({ prefix: '/api', version: 'v1' });
-api.apiResource('users', UserController);
-app.use(api.getRouter());
-app.use(apiErrorHandler); // Must be last
-
-app.listen(3000);
+```bash
+npm install @prisma/client    # Prisma
+npm install sequelize          # Sequelize
+npm install mongoose           # Mongoose
+npm install knex               # Knex
+npm install drizzle-orm        # Drizzle
 ```
 
-This generates:
+## Quick Start (Step by Step)
 
-| Method | Route | Action |
-|--------|-------|--------|
-| GET | `/api/v1/users` | List with pagination |
-| POST | `/api/v1/users` | Create |
-| GET | `/api/v1/users/:id` | Show one |
-| PUT | `/api/v1/users/:id` | Update |
-| PATCH | `/api/v1/users/:id` | Partial update |
-| DELETE | `/api/v1/users/:id` | Delete |
+This guide uses **Prisma + SQLite**. The steps are the same for any ORM — only the adapter changes.
 
-## Default Adapter
+### 1. Set up Prisma
 
-Set the adapter factory once in config — no need to repeat it in every controller:
+```bash
+npm install express @prisma/client
+npm install -D prisma
+```
+
+Create `prisma/schema.prisma`:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+}
+```
+
+Push the schema to create your database:
+
+```bash
+npx prisma db push
+```
+
+### 2. Create Config Files
 
 ```js
+// config/database.js — Database connection (shared singleton)
+const { PrismaClient } = require('@prisma/client');
+const db = new PrismaClient();
+module.exports = db;
+```
+
+```js
+// config/api.js — Set the adapter factory once for all controllers
 const { configure, createPrismaAdapter } = require('@rkumwt/express-rest-api');
 
-// One-line config — all controllers auto-create adapters from this factory
-configure({ adapter: createPrismaAdapter });
+configure({
+  adapter: createPrismaAdapter,
+});
 ```
 
+### 3. Create a Controller
+
 ```js
-// Controllers just specify the model
+// controllers/UserController.js
+const { ApiController } = require('@rkumwt/express-rest-api');
+const db = require('../config/database');
+
 class UserController extends ApiController {
+  // Adapter is auto-created from the factory set in config/api.js
   model = db.user;
+
+  // Fields returned by default when client doesn't specify ?fields=
+  defaultFields = ['id', 'name', 'email', 'role', 'createdAt'];
+
+  // Fields allowed in ?filters=
+  filterableFields = ['id', 'name', 'email', 'role'];
+
+  // Fields allowed in ?order=
+  sortableFields = ['id', 'name', 'email', 'createdAt'];
 }
 
-class PostController extends ApiController {
-  model = db.post;
-}
+module.exports = UserController;
 ```
 
-Switching ORMs? Change one line in config:
+### 4. Register Routes
 
 ```js
-// Switch from Prisma to Sequelize — controllers stay the same
-configure({ adapter: createSequelizeAdapter });
+// routes/api.js
+const { createApiRouter } = require('@rkumwt/express-rest-api');
+const UserController = require('../controllers/UserController');
+
+const api = createApiRouter({ prefix: '/api', version: 'v1' });
+
+// Registers: GET, POST /api/v1/users + GET, PUT, PATCH, DELETE /api/v1/users/:id
+api.apiResource('users', UserController);
+
+module.exports = api;
 ```
 
-You can also set the adapter explicitly on a per-controller basis (overrides the config factory):
+### 5. Set up Express
 
 ```js
-class UserController extends ApiController {
-  adapter = createPrismaAdapter(db.user); // Explicit — overrides config
-}
+// server.js
+const express = require('express');
+const { apiErrorHandler } = require('@rkumwt/express-rest-api');
+
+require('./config/api'); // Load adapter + global settings
+const api = require('./routes/api');
+
+const app = express();
+
+app.use(express.json());
+app.use(api.getRouter());
+app.use(apiErrorHandler); // Handles 404, validation, and other API errors
+
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
 ```
+
+### 6. Test It
+
+```bash
+node server.js
+```
+
+```bash
+# Create a user
+curl -X POST http://localhost:3000/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John", "email": "john@example.com"}'
+
+# List all users
+curl http://localhost:3000/api/v1/users
+
+# Get a single user
+curl http://localhost:3000/api/v1/users/1
+
+# Update a user
+curl -X PUT http://localhost:3000/api/v1/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John Doe"}'
+
+# Delete a user
+curl -X DELETE http://localhost:3000/api/v1/users/1
+```
+
+That's it! You have a full REST API with filtering, sorting, and pagination built in.
 
 ## Query Parameters
 
-### Field Selection
-
-```
+```bash
+# Select specific fields
 GET /api/v1/users?fields=id,name,email
+
+# Include relations
 GET /api/v1/users?fields=id,name,posts{id,title}
-```
 
-### Filtering
-
-```
-GET /api/v1/users?filters=(status eq active)
+# Filter
+GET /api/v1/users?filters=(role eq admin)
 GET /api/v1/users?filters=(role eq admin and status eq active)
-GET /api/v1/users?filters=(role eq admin or role eq editor)
 GET /api/v1/users?filters=(name lk john)
-GET /api/v1/users?filters=(id gt 5 and id le 20)
-```
 
-**Operators**: `eq` (=), `ne` (!=), `gt` (>), `ge` (>=), `lt` (<), `le` (<=), `lk` (LIKE/contains)
-
-### Sorting
-
-```
+# Sort
 GET /api/v1/users?order=name asc
 GET /api/v1/users?order=name asc, id desc
-```
 
-### Pagination
-
-```
+# Paginate
 GET /api/v1/users?limit=10&offset=20
 ```
 
+**Filter operators:** `eq` `ne` `gt` `ge` `lt` `le` `lk`
+
 ## Response Format
 
-### Collection (GET /api/v1/users)
-
 ```json
+// GET /api/v1/users
 {
   "data": [
     { "id": 1, "name": "John", "email": "john@example.com" }
@@ -145,267 +221,55 @@ GET /api/v1/users?limit=10&offset=20
     "timing": "5ms"
   }
 }
+
+// GET /api/v1/users/1
+{ "data": { "id": 1, "name": "John", "email": "john@example.com" } }
+
+// POST /api/v1/users → 201
+{ "data": { "id": 42, "name": "John" }, "message": "Resource created successfully" }
+
+// DELETE /api/v1/users/1 → 200
+{ "message": "Resource deleted successfully" }
 ```
 
-### Single Resource (GET /api/v1/users/1)
+## Switching Adapters
 
-```json
-{
-  "data": { "id": 1, "name": "John", "email": "john@example.com" }
-}
+Change one line in config — all controllers stay the same:
+
+```js
+// Prisma
+configure({ adapter: createPrismaAdapter });
+
+// Sequelize
+configure({ adapter: createSequelizeAdapter });
+
+// Mongoose
+configure({ adapter: createMongooseAdapter });
 ```
 
-### Create (POST → 201)
-
-```json
-{
-  "data": { "id": 42, "name": "New User" },
-  "message": "Resource created successfully"
-}
-```
-
-### Delete (DELETE → 200)
-
-```json
-{
-  "message": "Resource deleted successfully"
-}
-```
-
-### Error (404)
-
-```json
-{
-  "message": "Resource not found",
-  "error_code": "RESOURCE_NOT_FOUND",
-  "status": 404
-}
-```
-
-## Controller Configuration
+You can also set the adapter explicitly per controller (overrides config):
 
 ```js
 class UserController extends ApiController {
-  model = db.user;
-
-  // Fields returned by default (null = all fields)
-  defaultFields = ['id', 'name', 'email', 'role'];
-
-  // Allowed filter fields (null = all allowed)
-  filterableFields = ['id', 'name', 'email', 'role', 'status'];
-
-  // Fields stripped from responses
-  hiddenFields = ['password', 'rememberToken'];
-
-  // Allowed sort fields (null = all allowed)
-  sortableFields = ['id', 'name', 'email', 'createdAt'];
-
-  // Pagination overrides
-  defaultLimit = 20;
-  maxLimit = 200;
-
-  // Middleware
-  middleware = [authMiddleware];             // All actions
-  middlewareMap = { destroy: [adminOnly] };  // Per action
+  adapter = createPrismaAdapter(db.user); // Explicit — overrides config
 }
 ```
 
-## Lifecycle Hooks
+## Documentation
 
-```js
-class UserController extends ApiController {
-  model = db.user;
+Full documentation with examples, hooks, validation, and API reference:
 
-  // Called before creating a resource
-  async beforeStore(data, req) {
-    data.password = await bcrypt.hash(data.password, 12);
-    return data;
-  }
+**[https://express-rest-api.rajesh-kumawat.in](https://express-rest-api.rajesh-kumawat.in)**
 
-  // Called after creating
-  async afterStore(resource, req) {
-    await sendWelcomeEmail(resource.email);
-  }
+## Support
 
-  // Called before updating
-  async beforeUpdate(data, existing, req) {
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, 12);
-    }
-    return data;
-  }
+If you find this package useful, please consider supporting it:
 
-  async afterUpdate(resource, req) { }
+- **Star this repo** — It helps others discover the project
+- **Fork it** — Contribute features, fixes, or improvements
+- **Share it** — Tell other developers about it
 
-  // Called before/after deleting
-  async beforeDestroy(resource, req) {
-    if (resource.role === 'admin') {
-      throw new ForbiddenException('Cannot delete admin users');
-    }
-  }
-
-  async afterDestroy(resource, req) { }
-}
-```
-
-## Query Modification Hooks
-
-Modify the database query before execution:
-
-```js
-class UserController extends ApiController {
-  model = db.user;
-
-  // Add filter to every index query
-  modifyIndex(queryOptions, req) {
-    queryOptions.filters = queryOptions.filters || [];
-    queryOptions.filters.push({
-      field: 'status', operator: '=', value: 'active', conjunction: 'AND'
-    });
-    return queryOptions;
-  }
-
-  // Modify show query
-  modifyShow(queryOptions, req) {
-    return queryOptions;
-  }
-}
-```
-
-## Validation
-
-Supports Zod, Joi, or custom functions. Auto-detected at runtime.
-
-### With Zod
-
-```js
-const { z } = require('zod');
-
-class UserController extends ApiController {
-  model = db.user;
-
-  storeSchema = z.object({
-    name: z.string().min(1).max(255),
-    email: z.string().email(),
-    password: z.string().min(8),
-  });
-
-  updateSchema = z.object({
-    name: z.string().min(1).max(255).optional(),
-    email: z.string().email().optional(),
-  });
-}
-```
-
-### With Custom Function
-
-```js
-class UserController extends ApiController {
-  model = db.user;
-
-  storeSchema = async (data) => {
-    const errors = {};
-    if (!data.name) errors.name = ['Name is required'];
-    if (!data.email) errors.email = ['Email is required'];
-    if (Object.keys(errors).length > 0) {
-      return { valid: false, errors };
-    }
-    return { valid: true, data };
-  };
-}
-```
-
-Validation errors return 422:
-
-```json
-{
-  "message": "Validation failed",
-  "error_code": "VALIDATION_ERROR",
-  "status": 422,
-  "errors": {
-    "email": ["Invalid email format"],
-    "password": ["String must contain at least 8 character(s)"]
-  }
-}
-```
-
-## Router Options
-
-```js
-const api = createApiRouter({
-  prefix: '/api',
-  version: 'v1',
-  middleware: [corsMiddleware],
-});
-
-// All 5 CRUD routes
-api.apiResource('users', UserController);
-
-// Read-only (index + show)
-api.apiResource('posts', PostController, { only: ['index', 'show'] });
-
-// All except delete
-api.apiResource('comments', CommentController, { except: ['destroy'] });
-
-// Per-action middleware
-api.apiResource('articles', ArticleController, {
-  middleware: { destroy: [adminOnly] }
-});
-
-app.use(api.getRouter());
-```
-
-## Global Configuration
-
-```js
-const { configure, createPrismaAdapter } = require('@rkumwt/express-rest-api');
-
-configure({
-  // Set adapter factory once for all controllers
-  adapter: createPrismaAdapter,
-  pagination: {
-    defaultLimit: 20,    // default: 10
-    maxLimit: 500,       // default: 1000
-  },
-  response: {
-    envelope: true,      // wrap in { data, meta, message }
-    timing: true,        // include timing in meta
-  },
-  messages: {
-    created: 'Resource created successfully',
-    updated: 'Resource updated successfully',
-    deleted: 'Resource deleted successfully',
-  },
-  debug: process.env.NODE_ENV !== 'production',
-});
-```
-
-## Exceptions
-
-Throw these in hooks or middleware for structured error responses:
-
-```js
-const {
-  NotFoundException,       // 404
-  ValidationException,     // 422
-  UnauthorizedException,   // 401
-  ForbiddenException,      // 403
-} = require('@rkumwt/express-rest-api');
-
-// In a hook
-async beforeUpdate(data, existing, req) {
-  if (existing.userId !== req.user.id) {
-    throw new ForbiddenException('You can only edit your own resources');
-  }
-  return data;
-}
-```
-
-## Requirements
-
-- Node.js >= 18
-- Express 4.18+ or 5.x
-- Prisma (for `createPrismaAdapter`)
+**[GitHub Repository](https://github.com/rkumwt/rest-api)**
 
 ## License
 
