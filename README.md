@@ -3,7 +3,10 @@
 REST API package for Express.js. Get full CRUD with filtering, sorting, pagination, validation, and hooks — in minutes.
 
 [![npm version](https://img.shields.io/npm/v/@rkumwt/express-rest-api)](https://www.npmjs.com/package/@rkumwt/express-rest-api)
+[![npm downloads](https://img.shields.io/npm/dm/@rkumwt/express-rest-api)](https://www.npmjs.com/package/@rkumwt/express-rest-api)
 [![license](https://img.shields.io/npm/l/@rkumwt/express-rest-api)](https://github.com/rkumwt/rest-api/blob/master/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/rkumwt/express-rest-api)](https://github.com/rkumwt/express-rest-api)
+![visitors](https://komarev.com/ghpvc/?username=rkumwt-express-rest-api&label=visitors&color=blue)
 
 **Documentation:** [https://express-rest-api.rajesh-kumawat.in](https://express-rest-api.rajesh-kumawat.in)
 
