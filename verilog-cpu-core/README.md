@@ -6,6 +6,7 @@ This is a modular Verilog design of a basic CPU component setup including:
 - 32x8 Register File
 - Instruction decoder (Execution Unit)
 - Single-cycle processor wrapper (`processing.v`)
+- R-type instruction (so far)
 
 ##  Features
 - Full 8-bit addition with overflow detection
